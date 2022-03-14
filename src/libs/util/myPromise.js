@@ -1,76 +1,78 @@
+"use strict";
 // todo prefect myPromiseLike
+exports.__esModule = true;
 // const microTask = (fn) => Promise.resolve().then(fn)
-const microTask = (fn) => setTimeout(fn);
-class myPromise {
-    state = 'pending';
-    result;
-    onfulfilledCallback;
-    onrejectedCallback;
-    returnPromiseHandlers;
-    constructor(fn) {
+var microTask = function (fn) { return setTimeout(fn); };
+var myPromise = /** @class */ (function () {
+    function myPromise(fn) {
+        this.state = 'pending';
         this.onfulfilledCallback = [];
         this.onrejectedCallback = [];
         this.returnPromiseHandlers = [];
-        Object.defineProperties(this, ['onfulfilledCallback', 'onrejectedCallback', 'returnPromiseHandlers'].reduce((pre, v) => {
+        Object.defineProperties(this, ['onfulfilledCallback', 'onrejectedCallback', 'returnPromiseHandlers'].reduce(function (pre, v) {
             pre[v] = {
                 writable: false,
                 enumerable: false,
-                configurable: false,
+                configurable: false
             };
             return pre;
         }, {}));
-        // try {
-        fn(this.resolve.bind(this), this.reject.bind(this));
-        // } catch (error) {
-        //       this.reject(error)
-        // }
+        try {
+            fn(this.resolve.bind(this), this.reject.bind(this));
+        }
+        catch (error) {
+            this.reject(error);
+        }
     }
-    resolve(value) {
+    myPromise.prototype.resolve = function (value) {
+        var _this = this;
         if (this.state !== 'pending')
             return;
-        this.resolveValue(value, [res => {
-                if (this.state !== 'pending')
+        this.resolveValue(value, this, [function (res) {
+                if (_this.state !== 'pending')
                     return;
-                this.state = "fulfilled";
-                this.result = res;
-                this.resolveType(this.state);
-            }, res => {
-                if (this.state !== 'pending')
+                _this.state = "fulfilled";
+                _this.result = res;
+                _this.resolveType(_this.state);
+            }, function (res) {
+                if (_this.state !== 'pending')
                     return;
-                this.state = "rejected";
-                this.result = res;
-                this.resolveType(this.state);
+                _this.state = "rejected";
+                _this.result = res;
+                _this.resolveType(_this.state);
             }]);
-    }
-    static resolve(value) {
-        return new myPromise((res) => res(value));
-    }
-    static reject(reason) {
-        return new myPromise((res, rej) => rej(reason));
-    }
-    resolveType(type) {
+    };
+    myPromise.resolve = function (value) {
+        return new myPromise(function (res) { return res(value); });
+    };
+    myPromise.reject = function (reason) {
+        return new myPromise(function (res, rej) { return rej(reason); });
+    };
+    myPromise.prototype.resolveType = function (type) {
         if (this.state === 'pending')
             throw SyntaxError('resolveType' + type);
-        const callbacks = this[type === 'fulfilled' ? 'onfulfilledCallback' : 'onrejectedCallback'];
+        var callbacks = this[type === 'fulfilled' ? 'onfulfilledCallback' : 'onrejectedCallback'];
         // microTask(() => {
         if (callbacks.length === 0 && type === "rejected")
             return this.logError(this.result);
-        for (let i = 0; i < callbacks.length; i++) {
-            const fn = callbacks[i];
-            const pHandlers = this.returnPromiseHandlers[i];
+        for (var i = 0; i < callbacks.length; i++) {
+            var fn = callbacks[i];
+            var pHandlers = this.returnPromiseHandlers[i];
             this.resolveCb(fn, pHandlers);
+            // this.resolveValue(this.result, pHandlers)
         }
         // });
-    }
-    resolveCb(fn, pHandlers) {
-        microTask(() => {
+    };
+    myPromise.prototype.resolveCb = function (fn, pHandlers) {
+        var _this = this;
+        microTask(function () {
             try {
-                let res;
+                var res = void 0;
                 if (typeof fn === 'function') {
-                    res = fn(this.result);
+                    res = fn(_this.result);
                 }
                 else {
-                    pHandlers[this.state === 'fulfilled' ? 0 : 1](this.result);
+                    pHandlers[_this.state === 'fulfilled' ? 0 : 1](_this.result);
                     return;
                 }
                 pHandlers[0](res);
@@ -79,102 +81,120 @@ class myPromise {
                 pHandlers[1](error);
             }
         });
-    }
+    };
     // * 解决各种value
-    resolveValue(value, pHandlers) {
-        if (value === this) {
+    myPromise.prototype.resolveValue = function (value, promiseInstance, pHandlers) {
+        var _this = this;
+        if (value === promiseInstance) {
             return pHandlers[1](TypeError(' Chaining cycle detected for promise '));
         }
         if (value instanceof myPromise) {
-            value.then(...pHandlers);
+            microTask(function () {
+                value.then.apply(value, pHandlers);
+            });
         }
         else if ((typeof value === 'object' && value !== null) || typeof value === "function") {
-            let called = false;
+            var called_1 = false;
             // val 如果是 thenable或myPromise, 则又需要等待其调用，“等待”有可能是异步的，所以需要标志避免重复调用
             try {
                 // 保存then, 避免第二次取then与第一次不同
-                let then = value.then;
-                if (typeof then === "function") {
-                    then.call(value, (val) => {
-                        if (called)
-                            return;
-                        called = true;
-                        this.resolveValue(val, pHandlers);
-                    }, (reason) => {
-                        if (called)
-                            return;
-                        called = true;
-                        pHandlers[1](reason);
+                var then_1 = value.then;
+                if (typeof then_1 === "function") {
+                    microTask(function () {
+                        try {
+                            then_1.call(value, function (val) {
+                                if (called_1)
+                                    return;
+                                called_1 = true;
+                                _this.resolveValue(val, promiseInstance, pHandlers);
+                            }, function (reason) {
+                                if (called_1)
+                                    return;
+                                called_1 = true;
+                                pHandlers[1](reason);
+                            });
+                        }
+                        catch (error) {
+                            if (called_1)
+                                return;
+                            called_1 = true;
+                            pHandlers[1](error);
+                        }
                     });
                 }
                 else {
+                    if (called_1)
+                        return;
+                    called_1 = true;
                     pHandlers[0](value);
                 }
             }
             catch (error) {
-                if (called)
+                if (called_1)
                     return;
-                called = true;
+                called_1 = true;
                 pHandlers[1](error);
             }
         }
         else {
             pHandlers[0](value);
         }
-    }
-    reject(reason) {
+    };
+    myPromise.prototype.reject = function (reason) {
         if (this.state !== 'pending')
             return;
         this.state = 'rejected';
         this.result = reason;
         this.resolveType('rejected');
-    }
-    then(onfulfilled, onrejected) {
-        // todo
-        const resPromise = new myPromise((res, rej) => {
-            if (this.state === "pending") {
-                this.onfulfilledCallback.push(onfulfilled);
-                this.onrejectedCallback.push(onrejected);
-                this.returnPromiseHandlers.push([res, rej]);
+    };
+    myPromise.prototype.then = function (onfulfilled, onrejected) {
+        var _this = this;
+        var resPromise = new myPromise(function (res, rej) {
+            if (_this.state === "pending") {
+                _this.onfulfilledCallback.push(onfulfilled);
+                _this.onrejectedCallback.push(onrejected);
+                _this.returnPromiseHandlers.push([res, rej]);
             }
             else {
-                this.resolveCb(this.state === 'fulfilled' ? onfulfilled : onrejected, [res, rej]);
+                _this.resolveCb(_this.state === 'fulfilled' ? onfulfilled : onrejected, [res, rej]);
             }
         });
         return resPromise;
-    }
-    deferred() {
-        const obj = {};
-        obj.promise = new myPromise((res, rej) => {
+    };
+    myPromise.prototype.deferred = function () {
+        var obj = {};
+        obj.promise = new myPromise(function (res, rej) {
             obj.resolve = res;
             obj.reject = rej;
         });
         return obj;
-    }
-    catch(onrejected) {
+    };
+    myPromise.prototype["catch"] = function (onrejected) {
         return this.then(undefined, onrejected);
-    }
-    finally(onfinally) {
+    };
+    myPromise.prototype["finally"] = function (onfinally) {
+        var _this = this;
         return this
-            .then(onfinally, (err) => {
+            .then(onfinally, function (err) {
             onfinally && onfinally();
             // todo : 模拟onfinally不捕获错误
             // this.logError(err);
         })
-            .then(() => {
-            if (this.state === "fulfilled")
-                return this.result;
+            .then(function () {
+            if (_this.state === "fulfilled")
+                return _this.result;
             else
-                throw this.result;
+                throw _this.result;
         });
-    }
-    logError(err) {
+    };
+    myPromise.prototype.logError = function (err) {
         // console.error("__Uncaught (in myPromise)", err)
-    }
-}
-const p = new myPromise((res) => {
+    };
+    return myPromise;
+}());
+var p = new myPromise(function (res) {
     res();
 });
-Promise.resolve().then;
-export default myPromise;
-// module.exports = p;
+// Promise.resolve().then;
+// exports["default"] = myPromise;
+module.exports = p;

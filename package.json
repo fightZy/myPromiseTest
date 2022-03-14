@@ -4,6 +4,10 @@
   "main": "index.js",
   "license": "MIT",
   "devDependencies": {
+    "@babel/cli": "^7.17.6",
+    "@babel/core": "^7.17.5",
+    "@babel/preset-env": "^7.16.11",
+    "babel-loader": "^8.2.3",
     "clean-webpack-plugin": "^4.0.0",
     "html-webpack-plugin": "^5.5.0",
     "source-map-loader": "^3.0.1",
@@ -18,7 +22,7 @@
   },
   "scripts": {
     "complice": "tsc src/index.ts",
-    "compliceD":"tsc src/index.ts -d true --target ESNext ",
+    "compliceD": "tsc src/index.ts -d true --target ESNext ",
     "build": "webpack",
     "watch": "webpack --watch",
     "start": "webpack-dev-server --open",

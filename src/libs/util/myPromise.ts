@@ -44,7 +44,7 @@ class myPromise<T>{
 
       resolve(value?: T | myPromise<T> | { then: Function }): void {
             if (this.state !== 'pending') return;
-            this.resolveValue(value, [res => {
+            this.resolveValue(value, this, [res => {
                   if (this.state !== 'pending') return;
                   this.state = "fulfilled";
                   this.result = res
@@ -75,6 +75,7 @@ class myPromise<T>{
                   const fn = callbacks[i];
                   const pHandlers = this.returnPromiseHandlers[i];
                   this.resolveCb(fn, pHandlers);
+                  // this.resolveValue(this.result, pHandlers)
             }
             // });
       }
@@ -98,12 +99,15 @@ class myPromise<T>{
       }
 
       // * 解决各种value
-      resolveValue(value: any, pHandlers: [(value?: T | myPromise<T> | { then: Function }) => void, (res: any) => void]) {
-            if (value === this) {
+      resolveValue(value: any, promiseInstance: myPromise<any>, pHandlers: [(value?: T | myPromise<T> | { then: Function }) => void, (res: any) => void]) {
+            if (value === promiseInstance) {
                   return pHandlers[1](TypeError(' Chaining cycle detected for promise '))
             }
             if (value instanceof myPromise) {
-                  value.then(...pHandlers)
+                  // * 测试用例中不包含这种情况异步测试，，这的then会在异步中调用
+                  microTask(() => {
+                        value.then(...pHandlers)
+                  })
             } else if ((typeof value === 'object' && value !== null) || typeof value === "function") {
                   let called = false;
                   // val 如果是 thenable或myPromise, 则又需要等待其调用，“等待”有可能是异步的，所以需要标志避免重复调用
@@ -111,16 +115,26 @@ class myPromise<T>{
                         // 保存then, 避免第二次取then与第一次不同
                         let then = value.then;
                         if (typeof then === "function") {
-                              then.call(value, (val) => {
-                                    if (called) return;
-                                    called = true;
-                                    this.resolveValue(val, pHandlers)
-                              }, (reason) => {
-                                    if (called) return;
-                                    called = true;
-                                    pHandlers[1](reason)
+                              microTask(() => {
+                                    try {
+                                          then.call(value, (val) => {
+                                                if (called) return;
+                                                called = true;
+                                                this.resolveValue(val, promiseInstance, pHandlers)
+                                          }, (reason) => {
+                                                if (called) return;
+                                                called = true;
+                                                pHandlers[1](reason)
+                                          })
+                                    } catch (error) {
+                                          if (called) return;
+                                          called = true;
+                                          pHandlers[1](error)
+                                    }
                               })
                         } else {
+                              if (called) return;
+                              called = true;
                               pHandlers[0](value)
                         }
                   } catch (error) {
@@ -131,6 +145,7 @@ class myPromise<T>{
             } else {
                   pHandlers[0](value)
             }
+
       }
 
       reject(reason?: any) {
@@ -138,6 +153,7 @@ class myPromise<T>{
             this.state = 'rejected';
             this.result = reason;
             this.resolveType('rejected')
+
       }
 
       then(

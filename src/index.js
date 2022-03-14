@@ -1,4 +1,5 @@
-export {};
+"use strict";
+exports.__esModule = true;
 // let fn: (value: any) => void;
 // // new myPromise(resolve => fn = resolve);
 // function test() {
@@ -39,63 +40,63 @@ export {};
 //             }
 //       });
 // }
-// const p = new myPromise((res, rej) => {
-//       res(1)
-// }).then((res1) => {
-//       return {
-//             then: (res2) => {
-//                   res2(a(b(2)))
-//             }
-//       }
+// myPromise.resolve().then(() => {
+//       console.log(0);
+//       return myPromise.resolve(4)
+// }).then((res) => {
+//       console.log(res);
 // })
-// console.log(p);
-// const _p1 = new myPromise((res, rej) => {
-//       rej(1)
+// // console.log('123123');
+// myPromise.resolve().then(() => {
+//       console.log(1)
+// }).then(() => {
+//       console.log(2);
+// }).then(() => {
+//       console.log(3);
+// }).then(() => {
+//       console.log(5);
+// }).then(() => {
+//       console.log(6);
 // })
-// const _p2 = _p1.then().catch(err => console.log('err', err))
-// setTimeout(() => {
-//       console.log(_p1, _p2);
+// console.log('====================================');
+// console.log();
+// console.log('====================================');
+// debugger
+Promise.resolve().then(function () {
+    console.log(0);
+    return Promise.resolve(4);
+}).then(function (res) {
+    console.log(res);
+});
+Promise.resolve().then(function () {
+    console.log(1);
+}).then(function () {
+    console.log(2);
+}).then(function () {
+    console.log(3);
+}).then(function () {
+    console.log(5);
+}).then(function () {
+    console.log(6);
+});
+// debugger
+// let p1 = Promise.resolve();
+// let p2 = p1.then(() => {
+//       console.log(0);
+//       let p3 = Promise.resolve(4)
+//       return p3 // p3.then((res)=> p2.resolve(res))
 // })
-// const p1 = new Promise((res, rej) => {
-//       rej(1)
+// let p4 = p2.then(res => {
+//       console.log(res);
 // })
-// const p2 = p1.then().catch(err => console.log('err', err))
-// setTimeout(() => {
-//       console.log(p1, p2);
+// Promise.resolve().then(() => {
+//       console.log(1)
+// }).then(() => {
+//       console.log(2);
+// }).then(() => {
+//       console.log(3);
+// }).then(() => {
+//       console.log(5);
+// }).then(() => {
+//       console.log(6);
 // })
-// * ————————————————————————————————————————————————————————————————————————————————————————————
-// const _p1 = new myPromise((res, rej) => {
-//       rej(1)
-// })
-// setTimeout(() => {
-//       // const _p2 = _p1.catch(err => console.log('err', err))
-//       const _p2 = _p1.then(undefined, err => console.log('err', err))
-//       console.log(_p1, _p2);
-// }, 2000)
-// const p1 = new Promise((res, rej) => {
-//       rej(1)
-// })
-// setTimeout(() => {
-//       // const p2 = p1.catch(err => console.log('err', err))
-//       const p2 = p1.then(undefined, err => console.log('err', err))
-//       console.log(p1, p2);
-// }, 2000)
-// * ————————————————————————————————————————————————————————————————————————————————————————————
-// const _p1 = myPromise.resolve(new myPromise((res, rej) => {
-//       setTimeout(() => {
-//             res(1)
-//       }, 1000);
-// })).finally(() => {
-//       console.log(123);
-//       console.log(_p1);
-// })
-// console.log(_p1);
-// const p1 = Promise.resolve(new Promise((res, rej) => {
-//       setTimeout(() => {
-//             res(1)
-//       }, 1000);
-// })).finally(() => {
-//       console.log(123);
-//       console.log(p1);
-// })
-// * ————————————————————————————————————————————————————————————————————————————————————————————
